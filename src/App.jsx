@@ -33,7 +33,10 @@ async function request(path, options = {}, retry = true) {
   }
 
   if (!response.ok) {
-    throw new Error(body.error || 'Request failed. Please try again.');
+    const details = body.details
+      ? Object.values(body.details).join(' ')
+      : '';
+    throw new Error(details || body.error || 'Request failed. Please try again.');
   }
 
   return body;
@@ -57,7 +60,7 @@ function Icon({ name, size = 18 }) {
   );
 }
 
-function Login({ onLogin }) {
+function Login({ onLogin, onCreateAccount }) {
   const [identity, setIdentity] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -116,6 +119,86 @@ function Login({ onLogin }) {
               {busy ? 'Signing in…' : <>Sign in <Icon name="arrow" size={17} /></>}
             </button>
           </form>
+          <p className="auth-switch">New to Fieldnotes? <button type="button" onClick={onCreateAccount}>Create an account</button></p>
+          <div className="login-footnote"><span className="secure-dot" /> Your inventory is private and secure.</div>
+        </div>
+        <footer className="login-footer"><span>FIELDNOTES INVENTORY</span><span>MADE FOR THE WAY YOU WORK</span></footer>
+      </section>
+    </main>
+  );
+}
+
+function CreateAccount({ onLogin, onSignIn }) {
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  async function submit(event) {
+    event.preventDefault();
+    setError('');
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const result = await request('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ username: username.trim(), email: email.trim(), password }),
+      }, false);
+      sessionStorage.setItem('access_token', result.tokens.access_token);
+      sessionStorage.setItem('refresh_token', result.tokens.refresh_token);
+      onLogin(result.user);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <main className="login-layout">
+      <section className="login-story">
+        <a className="brand brand-light" href="/" aria-label="Fieldnotes home">
+          <span className="brand-mark"><Icon name="box" size={19} /></span>
+          <span>fieldnotes<span className="brand-period">.</span></span>
+        </a>
+        <div className="story-copy">
+          <span className="eyebrow eyebrow-light">A FRESH PAGE, A BETTER VIEW</span>
+          <h1>Make room<br />for what matters.</h1>
+          <p>Bring your products together in one calm, considered workspace.</p>
+        </div>
+        <div className="story-bottom"><span>INVENTORY, WITH INTENTION</span><span>01 — 03</span></div>
+      </section>
+
+      <section className="login-panel">
+        <div className="login-mobile-brand">
+          <a className="brand" href="/"><span className="brand-mark"><Icon name="box" size={19} /></span><span>fieldnotes<span className="brand-period">.</span></span></a>
+        </div>
+        <div className="login-form-wrap">
+          <span className="eyebrow">YOUR PRIVATE WORKSPACE</span>
+          <h2>Create your account.</h2>
+          <p className="form-intro">A few details and your collection is ready.</p>
+          <form onSubmit={submit}>
+            <label htmlFor="register-username">Username</label>
+            <input id="register-username" autoComplete="username" minLength={3} maxLength={100} value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Choose a username" required />
+            <label className="register-label" htmlFor="register-email">Email address</label>
+            <input id="register-email" type="email" autoComplete="email" maxLength={255} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required />
+            <label className="register-label" htmlFor="register-password">Password</label>
+            <input id="register-password" type="password" autoComplete="new-password" minLength={12} maxLength={72} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 12 characters" required />
+            <label className="register-label" htmlFor="register-confirm-password">Confirm password</label>
+            <input id="register-confirm-password" type="password" autoComplete="new-password" minLength={12} maxLength={72} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Enter your password again" required />
+            {error && <div className="alert" role="alert">{error}</div>}
+            <button className="button button-primary login-submit" disabled={busy}>
+              {busy ? 'Creating account…' : <>Create account <Icon name="arrow" size={17} /></>}
+            </button>
+          </form>
+          <p className="auth-switch">Already have an account? <button type="button" onClick={onSignIn}>Sign in</button></p>
           <div className="login-footnote"><span className="secure-dot" /> Your inventory is private and secure.</div>
         </div>
         <footer className="login-footer"><span>FIELDNOTES INVENTORY</span><span>MADE FOR THE WAY YOU WORK</span></footer>
@@ -291,6 +374,7 @@ function Dashboard({ user, onLogout }) {
 export default function App() {
   const [user, setUser] = useState(null);
   const [checkingSession, setCheckingSession] = useState(true);
+  const [showCreateAccount, setShowCreateAccount] = useState(false);
 
   useEffect(() => {
     function expireSession() {
@@ -322,7 +406,11 @@ export default function App() {
     return <div className="loading-state session-loading"><span className="spinner" /> Restoring your workspace…</div>;
   }
 
-  return user
-    ? <Dashboard user={user} onLogout={() => setUser(null)} />
-    : <Login onLogin={setUser} />;
+  if (user) {
+    return <Dashboard user={user} onLogout={() => setUser(null)} />;
+  }
+
+  return showCreateAccount
+    ? <CreateAccount onLogin={setUser} onSignIn={() => setShowCreateAccount(false)} />
+    : <Login onLogin={setUser} onCreateAccount={() => setShowCreateAccount(true)} />;
 }

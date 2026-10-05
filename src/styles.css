@@ -58,6 +58,10 @@ form > input::placeholder, .dialog input::placeholder, .dialog textarea::placeho
 .button-primary { background: var(--green); color: #fff; }
 .button-primary:hover:not(:disabled) { background: var(--green-dark); }
 .login-submit { width: 100%; justify-content: space-between; margin-top: 26px; padding: 14px 16px; }
+.register-label { margin-top: 17px !important; }
+.auth-switch { margin: 20px 0 0; color: #858a80; font-size: 12px; text-align: center; }
+.auth-switch button { border: 0; padding: 0; color: var(--green); background: transparent; font-size: inherit; font-weight: 600; }
+.auth-switch button:hover { color: var(--green-dark); text-decoration: underline; }
 .login-footnote { display: flex; align-items: center; gap: 8px; margin-top: 22px; color: #898e84; font-size: 11px; }
 .secure-dot { width: 7px; height: 7px; border-radius: 50%; background: #7da485; }
 .login-footer { position: absolute; right: 14%; bottom: 34px; left: 14%; color: #a2a69d; font-size: 9px; }
