@@ -322,10 +322,18 @@ function Dashboard({ user, onLogout }) {
       method: editing ? 'PUT' : 'POST',
       body: JSON.stringify(values),
     });
+    const responseProduct = result.data && typeof result.data === 'object'
+      ? result.data
+      : null;
+    const productId = responseProduct?.id ?? result.id;
+    if (productId == null || !Number.isInteger(Number(productId)) || Number(productId) < 1) {
+      throw new Error('The API did not confirm the product was saved. Redeploy the backend and try again.');
+    }
+
     const savedProduct = {
       ...values,
-      ...(result.data || {}),
-      id: result.data?.id ?? (editing ? dialogProduct.id : `pending-${Date.now()}`),
+      ...(responseProduct || {}),
+      id: Number(productId),
     };
     setProducts((current) => (
       editing
@@ -398,8 +406,8 @@ function Dashboard({ user, onLogout }) {
           <div className="product-grid">
             {products.map((product, index) => (
               <article className="product-card" key={product.id}>
-                <div className={`product-art art-${index % 5}`}><span className="product-number">{String(product.id).startsWith('pending-') ? 'SAVED' : `NO. ${String(product.id).padStart(3, '0')}`}</span><span className="product-art-icon"><Icon name="box" size={38} /></span><span className="stock-tag">{Number(product.stock) > 0 ? `${product.stock} IN STOCK` : 'OUT OF STOCK'}</span></div>
-                <div className="product-info"><div className="product-copy"><h3>{product.name}</h3><p>{product.description || 'No description added.'}</p></div><div className="product-meta"><strong>{formatPeso(product.price)}</strong><div className="card-actions"><button className="icon-button" aria-label={`Edit ${product.name}`} disabled={String(product.id).startsWith('pending-')} onClick={() => setDialogProduct(product)}><Icon name="edit" size={16} /></button><button className="icon-button icon-danger" aria-label={`Delete ${product.name}`} disabled={String(product.id).startsWith('pending-')} onClick={() => removeProduct(product)}><Icon name="trash" size={16} /></button></div></div></div>
+                <div className={`product-art art-${index % 5}`}><span className="product-number">NO. {String(product.id).padStart(3, '0')}</span><span className="product-art-icon"><Icon name="box" size={38} /></span><span className="stock-tag">{Number(product.stock) > 0 ? `${product.stock} IN STOCK` : 'OUT OF STOCK'}</span></div>
+                <div className="product-info"><div className="product-copy"><h3>{product.name}</h3><p>{product.description || 'No description added.'}</p></div><div className="product-meta"><strong>{formatPeso(product.price)}</strong><div className="card-actions"><button className="icon-button" aria-label={`Edit ${product.name}`} onClick={() => setDialogProduct(product)}><Icon name="edit" size={16} /></button><button className="icon-button icon-danger" aria-label={`Delete ${product.name}`} onClick={() => removeProduct(product)}><Icon name="trash" size={16} /></button></div></div></div>
               </article>
             ))}
           </div>
