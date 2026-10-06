@@ -325,14 +325,30 @@ function Dashboard({ user, onLogout }) {
     const responseProduct = result.data && typeof result.data === 'object'
       ? result.data
       : null;
-    const productId = responseProduct?.id ?? result.id;
+    let productId = responseProduct?.id ?? result.id ?? (editing ? dialogProduct.id : null);
+    let persistedProduct = responseProduct;
+
+    if (productId == null && !editing) {
+      const list = await request('/products');
+      const savedRecord = Array.isArray(list.data) && list.data.find((product) => (
+        product.name === values.name
+        && Number(product.price) === Number(values.price)
+        && Number(product.stock) === Number(values.stock)
+        && (product.description || null) === (values.description || null)
+      ));
+      if (savedRecord) {
+        persistedProduct = savedRecord;
+        productId = savedRecord.id;
+      }
+    }
+
     if (productId == null || !Number.isInteger(Number(productId)) || Number(productId) < 1) {
-      throw new Error('The API did not confirm the product was saved. Redeploy the backend and try again.');
+      throw new Error('The API accepted the request but the product is not confirmed in the database. Redeploy the latest backend commit and try again.');
     }
 
     const savedProduct = {
       ...values,
-      ...(responseProduct || {}),
+      ...(persistedProduct || {}),
       id: Number(productId),
     };
     setProducts((current) => (
