@@ -58,7 +58,10 @@ async function request(path, options = {}, retry = true) {
     const details = body.details
       ? Object.values(body.details).join(' ')
       : '';
-    throw new Error(details || body.error || 'Request failed. Please try again.');
+    const diagnostic = body.diagnostic
+      ? ` Step: ${body.diagnostic.step}; ${body.diagnostic.type} ${body.diagnostic.code}: ${body.diagnostic.message}`
+      : '';
+    throw new Error(`${details || body.error || 'Request failed. Please try again.'}${diagnostic}`);
   }
 
   return body;
