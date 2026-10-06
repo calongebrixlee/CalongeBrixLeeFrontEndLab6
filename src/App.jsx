@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 
-const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api').replace(/\/$/, '');
+const API_URL = (() => {
+  const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api').replace(/\/+$/, '');
+  return baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+})();
 const emptyProduct = { name: '', description: '', price: '', stock: '0' };
 
 async function request(path, options = {}, retry = true) {
