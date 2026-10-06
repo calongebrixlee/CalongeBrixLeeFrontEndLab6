@@ -30,6 +30,8 @@ async function request(path, options = {}, retry = true) {
       status: response.status,
       contentType: response.headers.get('content-type') || 'missing',
       bytes: new TextEncoder().encode(responseText).length,
+      handler: response.headers.get('x-product-create-handler') || 'missing',
+      step: response.headers.get('x-product-create-step') || 'missing',
     },
   });
 
@@ -364,7 +366,8 @@ function Dashboard({ user, onLogout }) {
           `Product was not confirmed. Backend revision: ${health.revision || 'unknown'}. `
           + `Create response fields: ${responseFields}; product fields: ${responseProductFields}; `
           + `products returned by API: ${listedCount}; POST status: ${responseMetadata.status}; `
-          + `content type: ${responseMetadata.contentType}; response bytes: ${responseMetadata.bytes}. `
+          + `content type: ${responseMetadata.contentType}; response bytes: ${responseMetadata.bytes}; `
+          + `create handler: ${responseMetadata.handler}; create step: ${responseMetadata.step}. `
           + `Send this message and the POST /api/products response to support.`,
         );
       }
