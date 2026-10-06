@@ -190,9 +190,9 @@ function CreateAccount({ onLogin, onSignIn }) {
             <label className="register-label" htmlFor="register-email">Email address</label>
             <input id="register-email" type="email" autoComplete="email" maxLength={255} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required />
             <label className="register-label" htmlFor="register-password">Password</label>
-            <input id="register-password" type="password" autoComplete="new-password" minLength={12} maxLength={72} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 12 characters" required />
+            <input id="register-password" type="password" autoComplete="new-password" maxLength={72} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Enter your password" required />
             <label className="register-label" htmlFor="register-confirm-password">Confirm password</label>
-            <input id="register-confirm-password" type="password" autoComplete="new-password" minLength={12} maxLength={72} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Enter your password again" required />
+            <input id="register-confirm-password" type="password" autoComplete="new-password" maxLength={72} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Enter your password again" required />
             {error && <div className="alert" role="alert">{error}</div>}
             <button className="button button-primary login-submit" disabled={busy}>
               {busy ? 'Creating account…' : <>Create account <Icon name="arrow" size={17} /></>}
