@@ -271,14 +271,29 @@ function Dashboard({ user, onLogout }) {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
-  const loadProducts = useCallback(async () => {
+  const loadProducts = useCallback(async (savedProduct = null) => {
     setLoading(true);
     setError('');
     try {
       const result = await request('/products');
-      setProducts(result.data);
+      if (!Array.isArray(result.data)) {
+        throw new Error('The server returned an invalid product list.');
+      }
+
+      const nextProducts = [...result.data];
+      if (savedProduct && !nextProducts.some((product) => String(product.id) === String(savedProduct.id))) {
+        nextProducts.unshift(savedProduct);
+      }
+      setProducts(nextProducts);
     } catch (err) {
       setError(err.message);
+      if (savedProduct) {
+        setProducts((current) => (
+          current.some((product) => String(product.id) === String(savedProduct.id))
+            ? current
+            : [savedProduct, ...current]
+        ));
+      }
     } finally {
       setLoading(false);
     }
@@ -289,13 +304,23 @@ function Dashboard({ user, onLogout }) {
   async function saveProduct(values) {
     const editing = dialogProduct && dialogProduct !== 'new';
     const path = editing ? `/products/${dialogProduct.id}` : '/products';
-    await request(path, {
+    const result = await request(path, {
       method: editing ? 'PUT' : 'POST',
       body: JSON.stringify(values),
     });
+    if (!result.data || result.data.id == null) {
+      throw new Error('The server did not return the saved product. Please refresh and try again.');
+    }
+
+    const savedProduct = result.data;
+    setProducts((current) => (
+      editing
+        ? current.map((product) => String(product.id) === String(savedProduct.id) ? savedProduct : product)
+        : [savedProduct, ...current.filter((product) => String(product.id) !== String(savedProduct.id))]
+    ));
     setDialogProduct(undefined);
     setNotice(editing ? 'Changes saved.' : 'Product added to your collection.');
-    await loadProducts();
+    await loadProducts(savedProduct);
   }
 
   async function removeProduct(product) {
