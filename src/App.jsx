@@ -18,7 +18,20 @@ async function request(path, options = {}, retry = true) {
   if (token) headers.set('Authorization', `Bearer ${token}`);
 
   const response = await fetch(`${API_URL}${path}`, { ...options, headers });
-  const body = await response.json().catch(() => ({}));
+  const responseText = await response.text();
+  let body = {};
+  try {
+    body = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    body = {};
+  }
+  Object.defineProperty(body, 'responseMetadata', {
+    value: {
+      status: response.status,
+      contentType: response.headers.get('content-type') || 'missing',
+      bytes: new TextEncoder().encode(responseText).length,
+    },
+  });
 
   if (response.status === 401 && retry && sessionStorage.getItem('refresh_token') && path !== '/auth/refresh') {
     const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
@@ -346,10 +359,13 @@ function Dashboard({ user, onLogout }) {
           ? Object.keys(responseProduct).join(', ')
           : 'none';
         const listedCount = Array.isArray(list.data) ? list.data.length : 'invalid';
+        const responseMetadata = result.responseMetadata;
         throw new Error(
           `Product was not confirmed. Backend revision: ${health.revision || 'unknown'}. `
           + `Create response fields: ${responseFields}; product fields: ${responseProductFields}; `
-          + `products returned by API: ${listedCount}. Send this message and the POST /api/products response to support.`,
+          + `products returned by API: ${listedCount}; POST status: ${responseMetadata.status}; `
+          + `content type: ${responseMetadata.contentType}; response bytes: ${responseMetadata.bytes}. `
+          + `Send this message and the POST /api/products response to support.`,
         );
       }
     }
