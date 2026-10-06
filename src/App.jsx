@@ -281,7 +281,17 @@ function Dashboard({ user, onLogout }) {
       }
 
       const nextProducts = [...result.data];
-      if (savedProduct && !nextProducts.some((product) => String(product.id) === String(savedProduct.id))) {
+      if (savedProduct) {
+        const savedRecord = nextProducts.find((product) => (
+          product.name === savedProduct.name
+          && Number(product.price) === Number(savedProduct.price)
+          && Number(product.stock) === Number(savedProduct.stock)
+          && (product.description || null) === (savedProduct.description || null)
+        ));
+        if (savedRecord) {
+          setProducts(nextProducts);
+          return;
+        }
         nextProducts.unshift(savedProduct);
       }
       setProducts(nextProducts);
@@ -308,11 +318,11 @@ function Dashboard({ user, onLogout }) {
       method: editing ? 'PUT' : 'POST',
       body: JSON.stringify(values),
     });
-    if (!result.data || result.data.id == null) {
-      throw new Error('The server did not return the saved product. Please refresh and try again.');
-    }
-
-    const savedProduct = result.data;
+    const savedProduct = {
+      ...values,
+      ...(result.data || {}),
+      id: result.data?.id ?? (editing ? dialogProduct.id : `pending-${Date.now()}`),
+    };
     setProducts((current) => (
       editing
         ? current.map((product) => String(product.id) === String(savedProduct.id) ? savedProduct : product)
@@ -384,8 +394,8 @@ function Dashboard({ user, onLogout }) {
           <div className="product-grid">
             {products.map((product, index) => (
               <article className="product-card" key={product.id}>
-                <div className={`product-art art-${index % 5}`}><span className="product-number">NO. {String(product.id).padStart(3, '0')}</span><span className="product-art-icon"><Icon name="box" size={38} /></span><span className="stock-tag">{Number(product.stock) > 0 ? `${product.stock} IN STOCK` : 'OUT OF STOCK'}</span></div>
-                <div className="product-info"><div className="product-copy"><h3>{product.name}</h3><p>{product.description || 'No description added.'}</p></div><div className="product-meta"><strong>${Number(product.price).toFixed(2)}</strong><div className="card-actions"><button className="icon-button" aria-label={`Edit ${product.name}`} onClick={() => setDialogProduct(product)}><Icon name="edit" size={16} /></button><button className="icon-button icon-danger" aria-label={`Delete ${product.name}`} onClick={() => removeProduct(product)}><Icon name="trash" size={16} /></button></div></div></div>
+                <div className={`product-art art-${index % 5}`}><span className="product-number">{String(product.id).startsWith('pending-') ? 'SAVED' : `NO. ${String(product.id).padStart(3, '0')}`}</span><span className="product-art-icon"><Icon name="box" size={38} /></span><span className="stock-tag">{Number(product.stock) > 0 ? `${product.stock} IN STOCK` : 'OUT OF STOCK'}</span></div>
+                <div className="product-info"><div className="product-copy"><h3>{product.name}</h3><p>{product.description || 'No description added.'}</p></div><div className="product-meta"><strong>${Number(product.price).toFixed(2)}</strong><div className="card-actions"><button className="icon-button" aria-label={`Edit ${product.name}`} disabled={String(product.id).startsWith('pending-')} onClick={() => setDialogProduct(product)}><Icon name="edit" size={16} /></button><button className="icon-button icon-danger" aria-label={`Delete ${product.name}`} disabled={String(product.id).startsWith('pending-')} onClick={() => removeProduct(product)}><Icon name="trash" size={16} /></button></div></div></div>
               </article>
             ))}
           </div>
