@@ -4,6 +4,10 @@ const API_URL = (() => {
   const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api').replace(/\/+$/, '');
   return baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
 })();
+const formatPeso = (amount) => new Intl.NumberFormat('en-PH', {
+  style: 'currency',
+  currency: 'PHP',
+}).format(Number(amount) || 0);
 const emptyProduct = { name: '', description: '', price: '', stock: '0' };
 
 async function request(path, options = {}, retry = true) {
@@ -250,7 +254,7 @@ function ProductDialog({ product, onClose, onSave }) {
           <label htmlFor="product-description">Description <span className="optional">OPTIONAL</span></label>
           <textarea id="product-description" name="description" value={form.description || ''} onChange={change} placeholder="A few details worth remembering…" rows="3" />
           <div className="form-columns">
-            <div><label htmlFor="product-price">Price</label><div className="input-prefix"><span>$</span><input id="product-price" name="price" type="number" min="0" step="0.01" value={form.price} onChange={change} placeholder="0.00" required /></div></div>
+            <div><label htmlFor="product-price">Price</label><div className="input-prefix"><span>₱</span><input id="product-price" name="price" type="number" min="0" step="0.01" value={form.price} onChange={change} placeholder="0.00" required /></div></div>
             <div><label htmlFor="product-stock">Quantity</label><input id="product-stock" name="stock" type="number" min="0" step="1" value={form.stock} onChange={change} required /></div>
           </div>
           {error && <div className="alert" role="alert">{error}</div>}
@@ -380,7 +384,7 @@ function Dashboard({ user, onLogout }) {
           <div className="overview-rule" />
           <div className="overview-item"><span className="overview-label">TOTAL UNITS</span><strong>{loading ? '—' : products.reduce((sum, product) => sum + Number(product.stock), 0).toLocaleString()}</strong><span className="overview-note">across your collection</span></div>
           <div className="overview-rule" />
-          <div className="overview-item"><span className="overview-label">STOCK VALUE</span><strong>{loading ? '—' : `$${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</strong><span className="overview-note">at current inventory</span></div>
+          <div className="overview-item"><span className="overview-label">STOCK VALUE</span><strong>{loading ? '—' : formatPeso(totalValue)}</strong><span className="overview-note">at current inventory</span></div>
         </section>
 
         <div className="section-heading"><div><span className="eyebrow">THE DETAILS</span><h2>All products <span className="count-pill">{products.length}</span></h2></div><span className="sort-note">MOST RECENT FIRST</span></div>
@@ -395,7 +399,7 @@ function Dashboard({ user, onLogout }) {
             {products.map((product, index) => (
               <article className="product-card" key={product.id}>
                 <div className={`product-art art-${index % 5}`}><span className="product-number">{String(product.id).startsWith('pending-') ? 'SAVED' : `NO. ${String(product.id).padStart(3, '0')}`}</span><span className="product-art-icon"><Icon name="box" size={38} /></span><span className="stock-tag">{Number(product.stock) > 0 ? `${product.stock} IN STOCK` : 'OUT OF STOCK'}</span></div>
-                <div className="product-info"><div className="product-copy"><h3>{product.name}</h3><p>{product.description || 'No description added.'}</p></div><div className="product-meta"><strong>${Number(product.price).toFixed(2)}</strong><div className="card-actions"><button className="icon-button" aria-label={`Edit ${product.name}`} disabled={String(product.id).startsWith('pending-')} onClick={() => setDialogProduct(product)}><Icon name="edit" size={16} /></button><button className="icon-button icon-danger" aria-label={`Delete ${product.name}`} disabled={String(product.id).startsWith('pending-')} onClick={() => removeProduct(product)}><Icon name="trash" size={16} /></button></div></div></div>
+                <div className="product-info"><div className="product-copy"><h3>{product.name}</h3><p>{product.description || 'No description added.'}</p></div><div className="product-meta"><strong>{formatPeso(product.price)}</strong><div className="card-actions"><button className="icon-button" aria-label={`Edit ${product.name}`} disabled={String(product.id).startsWith('pending-')} onClick={() => setDialogProduct(product)}><Icon name="edit" size={16} /></button><button className="icon-button icon-danger" aria-label={`Delete ${product.name}`} disabled={String(product.id).startsWith('pending-')} onClick={() => removeProduct(product)}><Icon name="trash" size={16} /></button></div></div></div>
               </article>
             ))}
           </div>
