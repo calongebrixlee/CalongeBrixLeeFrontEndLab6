@@ -339,11 +339,23 @@ function Dashboard({ user, onLogout }) {
       if (savedRecord) {
         persistedProduct = savedRecord;
         productId = savedRecord.id;
+      } else {
+        const health = await request('/health');
+        const responseFields = Object.keys(result).join(', ') || 'none';
+        const responseProductFields = responseProduct
+          ? Object.keys(responseProduct).join(', ')
+          : 'none';
+        const listedCount = Array.isArray(list.data) ? list.data.length : 'invalid';
+        throw new Error(
+          `Product was not confirmed. Backend revision: ${health.revision || 'unknown'}. `
+          + `Create response fields: ${responseFields}; product fields: ${responseProductFields}; `
+          + `products returned by API: ${listedCount}. Send this message and the POST /api/products response to support.`,
+        );
       }
     }
 
     if (productId == null || !Number.isInteger(Number(productId)) || Number(productId) < 1) {
-      throw new Error('The API accepted the request but the product is not confirmed in the database. Redeploy the latest backend commit and try again.');
+      throw new Error('The API response did not include a valid product ID. Send the POST /api/products response to support.');
     }
 
     const savedProduct = {
